@@ -128,8 +128,18 @@ Takes a scanner and yields the next value from it.  Returns a 2-tuple, where
 the first element is appropriate to `result_type`, and the second element is
 a scanner to be used in any subsequent call to `next`.
 
+```erlang
+
+    Scanner = efind:scanner(os:getenv("HOME")).
+    {{dir, Home}, Scanner2} = efind:next(Scanner).
+    {{Type, Name}, Scanner3} = efind:next(Scanner2).
+```
+
+
 <strong>The scanner used in the original call should not be used afterward</strong>
 .
+When exhausted, yields the tuple `{finished, FinalScanner}`.  Calling `next` on that
+scanner is an exit-able offense.
 
 <a name="scan-1"></a>
 
@@ -153,4 +163,9 @@ scan(Directory::string(), Options::[tuple()]) -&gt; #scanner{}
 
 Returns a scanner that starts in the given directory.  The same options specified in [`find/2`](#find-2)
 are relevant here.
+
+```erlang
+
+    Scanner = efind:scan(RootDirectory).
+```
 

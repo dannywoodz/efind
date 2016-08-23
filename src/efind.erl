@@ -62,6 +62,9 @@ scan(Directory) ->
 
 %% @doc Returns a scanner that starts in the given directory.  The same options specified in {@link find/2}
 %% are relevant here.
+%% <pre lang="erlang">
+%%   Scanner = efind:scan(RootDirectory).
+%% </pre>
 -spec scan(string(),list(tuple())) -> #scanner{}.
 scan(Directory, Options) ->
     Scanner = #scanner{root=Directory,
@@ -77,7 +80,14 @@ scan(Directory, Options) ->
 %% Takes a scanner and yields the next value from it.  Returns a 2-tuple, where
 %% the first element is appropriate to `result_type', and the second element is
 %% a scanner to be used in any subsequent call to `next'.
+%% <pre lang="erlang">
+%%   Scanner = efind:scanner(os:getenv("HOME")).
+%%   {{dir, Home}, Scanner2} = efind:next(Scanner).
+%%   {{Type, Name}, Scanner3} = efind:next(Scanner2).
+%% </pre>
 %% <strong>The scanner used in the original call should not be used afterward</strong>.
+%% When exhausted, yields the tuple `{finished, FinalScanner}'.  Calling `next' on that
+%% scanner is an exit-able offense.
 
 -spec next(#scanner{}) -> {{dir,string()}, #scanner{}} | {{file,string()}, #scanner{}} | {finished, #scanner{}}.
 next(#scanner{finished=true}) ->
