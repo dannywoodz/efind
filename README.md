@@ -6,7 +6,7 @@ Copyright (c) 2016 Danny Woods
 
 __Version:__ 1.0
 
-__Authors:__ [`Danny Woods (dannywoodz@yahoo.co.uk)`](mailto:Danny Woods (dannywoodz@yahoo.co.uk)).
+__Authors:__ Danny Woods ([`dannywoodz@yahoo.co.uk`](mailto:dannywoodz@yahoo.co.uk)).
 
 `efind` is a utility library in the spirit of the Unix `find` tool
 
