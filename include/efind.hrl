@@ -1,0 +1,1 @@
+-record(scanner, {root,scanner,dirs=true,files=true,accept_fn = fun(_Entry) -> true end,finished=false,result_type=basic}).
