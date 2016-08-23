@@ -31,8 +31,8 @@ until some match is found without reading more than is necessary.<a name="index"
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#find-1">find/1</a></td><td>Equivalent to <code>find(BaseDirectory,[])</code></td></tr><tr><td valign="top"><a href="#find-2">find/2</a></td><td>For the given base directory, returns a list of directories and files beneath (starting with the base itself).</td></tr><tr><td valign="top"><a href="#next-1">next/1</a></td><td>
-Takes a scanner and yields the next value from it.</td></tr><tr><td valign="top"><a href="#scan-1">scan/1</a></td><td>Equivalent to <code>scan(BaseDirectory, [])</code></td></tr><tr><td valign="top"><a href="#scan-2">scan/2</a></td><td>Returns a scanner that starts in the given directory.</td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#find-1">find/1</a></td><td>Equivalent to <a href="#find-2"><tt>find(BaseDirectory, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#find-2">find/2</a></td><td>For the given base directory, returns a list of directories and files beneath (starting with the base itself).</td></tr><tr><td valign="top"><a href="#next-1">next/1</a></td><td>
+Takes a scanner and yields the next value from it.</td></tr><tr><td valign="top"><a href="#scan-1">scan/1</a></td><td>Equivalent to <a href="#scan-2"><tt>scan(BaseDirectory, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#scan-2">scan/2</a></td><td>Returns a scanner that starts in the given directory.</td></tr></table>
 
 
 <a name="functions"></a>
@@ -48,7 +48,7 @@ find(BaseDirectory::string()) -&gt; [] | [{file, string()} | {dir, string()}]
 </code></pre>
 <br />
 
-Equivalent to `find(BaseDirectory,[])`
+Equivalent to [`find(BaseDirectory, [])`](#find-2).
 
 <a name="find-2"></a>
 
@@ -150,7 +150,7 @@ scan(Directory::string()) -&gt; #scanner{}
 </code></pre>
 <br />
 
-Equivalent to `scan(BaseDirectory, [])`
+Equivalent to [`scan(BaseDirectory, [])`](#scan-2).
 
 <a name="scan-2"></a>
 

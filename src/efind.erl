@@ -18,9 +18,9 @@
 %%% @end
 
 -module(efind).
+-include("../include/efind.hrl").
 -include_lib("kernel/include/file.hrl").
 -export([find/1, find/2, scan/1, scan/2, next/1]).
--record(scanner, {root,scanner,dirs=true,files=true,accept_fn = fun(_Entry) -> true end,finished=false,result_type=basic}).
 
 %% ============================================================================
 %% PUBLIC API
@@ -28,7 +28,7 @@
 
 %%% Eager Loading
 
-%% @doc Equivalent to `find(BaseDirectory,[])'
+%% @equiv find(BaseDirectory,[])
 -spec find(string()) -> [] | list({file,string()} | {dir,string()}).
 find(BaseDirectory) ->
     find(BaseDirectory, []).
@@ -55,7 +55,7 @@ find(BaseDirectory, Options) ->
     Scanner = scan(BaseDirectory, Options),
     collect(next(Scanner), []).
 
-%% @doc Equivalent to `scan(BaseDirectory, [])'
+%% @equiv scan(BaseDirectory, [])
 -spec scan(string()) -> #scanner{}.
 scan(Directory) ->
     scan(Directory, []).
