@@ -96,8 +96,7 @@ next(#scanner{scanner=ScannerProcess,finished=false}=Scanner) ->
     ScannerProcess ! {self(), next},
     receive
         {ScannerProcess, finished} -> {finished, Scanner#scanner{finished=true}};
-        {ScannerProcess, FSEntry} -> {FSEntry, Scanner};
-        AnythingElse -> exit({unexpected, AnythingElse})
+        {ScannerProcess, FSEntry} -> {FSEntry, Scanner}
     end.
 
 %% ============================================================================
