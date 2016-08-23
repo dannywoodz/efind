@@ -1,0 +1,11 @@
+{application, efind,
+ [
+  {description, "Utilities for scanning directories"},
+  {vsn, "1.0"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+	{modules, [efind]}
+ ]}.

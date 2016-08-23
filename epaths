@@ -1,0 +1,22 @@
+#!/usr/bin/env escript
+
+main([]) ->
+    DepDirectories = deps(),
+    CoreDependencyPaths = core(),
+    io:format("~s~n", [string:join(CoreDependencyPaths ++ DepDirectories, " ")]);
+main(["core"]) ->
+    io:format("~s~n", [string:join(core(), " ")]);
+main(["deps"]) ->
+    io:format("~s~n", [string:join(deps(), " ")]).
+
+deps() ->
+		case file:read_file_info("deps") of
+			{error, enoent} -> [];
+			_ -> 
+				{ok, Deps} = file:list_dir("deps"),
+    		EntriesUnderDeps = lists:map(fun(Basename) -> filename:join(["deps", Basename, "ebin"]) end, Deps),
+    		lists:filter(fun filelib:is_dir/1, EntriesUnderDeps)
+		end.
+
+core() ->
+    [ code:lib_dir(Lib, ebin) || Lib <- [ erts, stdlib, kernel, sasl, inets, mnesia, ssl, crypto ]].
