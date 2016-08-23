@@ -3,3 +3,34 @@
 @version 1.0
 @title efind
 @doc `efind' is a utility library in the spirit of the Unix `find' tool
+
+<h1>Examples</h1>
+
+{@link efind:find/1} and {@link efind:find/2} scan the selected root and return a list of results.
+
+<pre lang="erlang">
+  RootDir = "...".
+  ListOfTuples = efind:find(RootDir). % Each tuple is {file, Filename} or {dir, Dirname}
+  ListOfNames = efind:find(RootDir, [{result_type,names}]).
+  ListOfFileNames = efind:find(RootDir, [{result_type,names},{dirs,false}]).
+  ListOfDirNames = efind:find(RootDir, [{result_type,names},{files,false}]).
+  ListOfXmlFiles = efind:find(RootDir,
+  		 [{result_type,names},
+		 {dirs,false},
+		 {accept_fn, fun(Name) -> filename:extension(Name) == ".xml" end}]).
+</pre>
+
+{@link efind:scan/1} and {@link efind:scan/2} are lazy versions of <code>find</code>.  In concert
+with {@link efind:next/1}, they can be used to walk the filesystem on-demand:
+
+<pre lang="erlang">
+  RootDir = "...".
+  Scanner = efind:scan(RootDir),
+  Fn = fun({finished,_Scanner}, _F) ->
+  		io:format("Done");
+	  ({Entry,NewScanner}, F) ->
+	  	io:format("~p~n", [Entry]),
+		F(efind:next(NewScanner), F)
+	end,
+  Fn(efind:next(Scanner), Fn).
+</pre>
