@@ -1,1 +1,7 @@
--record(scanner, {root,scanner,dirs=true,files=true,accept_fn = fun(_Entry) -> true end,finished=false,result_type=basic}).
+-record(scanner, {root                           :: string(),
+		  scanner                        :: undefined | pid(),
+		  dirs=true                      :: boolean(),
+		  files=true                     :: boolean(),
+		  accept_fn = fun(_) -> true end :: function(),
+		  finished=false                 :: boolean(),
+		  result_type=basic              :: basic | names}).

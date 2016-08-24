@@ -71,7 +71,8 @@ scan(Directory, Options) ->
                        dirs=dirs_opt(Options),
                        files=files_opt(Options),
                        accept_fn=accept_fn_opt(Options),
-                       result_type = result_type_opt(Options)
+                       result_type=result_type_opt(Options),
+                       scanner=self() % Soon-to-be-replaced
                       },
     ScannerProcess = spawn_link(fun() -> scanner([Directory], Scanner#scanner{scanner=self()}) end),
     Scanner#scanner{scanner=ScannerProcess}.
