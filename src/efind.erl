@@ -149,7 +149,7 @@ result_type_opt(ListOfTuples) ->
               list({file,string()} | {dir,string()})) ->
                      list({file,string()} | {dir,string()}) | list(string()).
 collect({finished, _Scanner}, Results) ->
-    Results;
+    lists:reverse(Results);
 collect({Spec, Scanner}, Results) ->
     collect(next(Scanner), [Spec|Results]).
 

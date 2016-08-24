@@ -11,9 +11,9 @@ compile:
 	@$(REBAR) -C rebar.config compile
 test:
 ifeq ($(tests),)
-	@$(REBAR) -C test.config skip_deps=true eunit
+	@$(REBAR) skip_deps=true eunit
 else
-	@$(REBAR) -C test.config skip_deps=true eunit tests=$(tests)
+	@$(REBAR) skip_deps=true eunit tests=$(tests)
 endif
 
 clean:
