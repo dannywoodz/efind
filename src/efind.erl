@@ -104,7 +104,7 @@ next(#scanner{scanner=ScannerProcess,finished=false}=Scanner) ->
 %% private
 %% ============================================================================
 
--spec option(atom(), list(tuple()), any(), function()) -> any().
+-spec option(atom(), list(tuple()), any(), fun((any())->boolean())) -> any().
 option(Option, ListOfTuples, Default, ValidatorFn) ->
     case lists:keyfind(Option, 1, ListOfTuples) of
         {Option, Value} -> ValidatorFn(Value);
@@ -137,7 +137,7 @@ dirs_opt(ListOfTuples) ->
 files_opt(ListOfTuples) ->
     option(files, ListOfTuples, true, fun must_be_boolean/1).
     
--spec accept_fn_opt(list(tuple())) -> function().
+-spec accept_fn_opt(list(tuple())) -> fun(({dir,string()}|{file,string()})->boolean()).
 accept_fn_opt(ListOfTuples) ->
     option(accept_fn, ListOfTuples, fun(_AlwaysAccept) -> true end, fun identity/1).
 
