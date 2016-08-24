@@ -19,4 +19,4 @@ deps() ->
 		end.
 
 core() ->
-    [ code:lib_dir(Lib, ebin) || Lib <- [ erts, stdlib, kernel, sasl, inets, mnesia, ssl, crypto ]].
+    [ code:lib_dir(Lib, ebin) || Lib <- [ erts, stdlib, kernel ]].
