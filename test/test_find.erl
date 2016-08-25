@@ -1,5 +1,4 @@
 -module(test_find).
--include("../include/efind.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 -spec shell(string(), [string()]) -> integer().
@@ -43,20 +42,20 @@ with_temp_directory_containing_files(Filenames, Fn2) ->
 empty_dir_test() ->
     with_empty_temp_directory(fun(Dir) ->
                                       Scanner = efind:scan(Dir),
-                                      ?assertNot(Scanner#scanner.finished),
+                                      ?assertNot(efind:finished(Scanner)),
                                       {{dir, Dir}, Scanner2} = efind:next(Scanner),
-                                      ?assertNot(Scanner2#scanner.finished),
+                                      ?assertNot(efind:finished(Scanner2)),
                                       {finished, Scanner3} = efind:next(Scanner2),
-                                      ?assert(Scanner3#scanner.finished),
+                                      ?assert(efind:finished(Scanner3)),
                                       ok
                               end).
 
 empty_dir_no_dirs_test() ->
     with_empty_temp_directory(fun(Dir) ->
                                       Scanner = efind:scan(Dir,[{dirs,false}]),
-                                      ?assertNot(Scanner#scanner.finished),
+                                      ?assertNot(efind:finished(Scanner)),
                                       {finished, Scanner2} = efind:next(Scanner),
-                                      ?assert(Scanner2#scanner.finished),
+                                      ?assert(efind:finished(Scanner2)),
                                       ok
                               end).
 
@@ -102,8 +101,16 @@ with_accept_fn_names_only_test() ->
 using_finished_scanner_test() ->
     with_empty_temp_directory(fun(Dir) ->
                                       Scanner = efind:scan(Dir,[{dirs,false}]),
-                                      {finished, #scanner{finished=true}=Scanner2} = efind:next(Scanner),
+                                      {finished, Scanner2} = efind:next(Scanner),
+                                      ?assert(efind:finished(Scanner2)),
                                       ?assertExit(finished, efind:next(Scanner2))
+                              end).
+
+close_partially_realised_scanner_test() ->
+    with_empty_temp_directory(fun(Dir) ->
+                                      Scanner = efind:scan(Dir),
+                                      {finished, Scanner2} = efind:close(Scanner),
+                                      ?assert(efind:finished(Scanner2))
                               end).
 
 bad_boolean_config_test() ->

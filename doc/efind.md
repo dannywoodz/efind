@@ -31,13 +31,22 @@ until some match is found without reading more than is necessary.<a name="index"
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#find-1">find/1</a></td><td>Equivalent to <a href="#find-2"><tt>find(BaseDirectory, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#find-2">find/2</a></td><td>For the given base directory, returns a list of directories and files beneath (starting with the base itself).</td></tr><tr><td valign="top"><a href="#next-1">next/1</a></td><td>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#close-1">close/1</a></td><td></td></tr><tr><td valign="top"><a href="#find-1">find/1</a></td><td>Equivalent to <a href="#find-2"><tt>find(BaseDirectory, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#find-2">find/2</a></td><td>For the given base directory, returns a list of directories and files beneath (starting with the base itself).</td></tr><tr><td valign="top"><a href="#finished-1">finished/1</a></td><td></td></tr><tr><td valign="top"><a href="#next-1">next/1</a></td><td>
 Takes a scanner and yields the next value from it.</td></tr><tr><td valign="top"><a href="#scan-1">scan/1</a></td><td>Equivalent to <a href="#scan-2"><tt>scan(BaseDirectory, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#scan-2">scan/2</a></td><td>Returns a scanner that starts in the given directory.</td></tr></table>
 
 
 <a name="functions"></a>
 
 ## Function Details ##
+
+<a name="close-1"></a>
+
+### close/1 ###
+
+<pre><code>
+close(Scanner::#scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}) -&gt; {finished, #scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}}
+</code></pre>
+<br />
 
 <a name="find-1"></a>
 
@@ -115,12 +124,21 @@ Behaviour scan be adjusted by feeding appropriate configuration into Options:
 
 Defaults are: `[{result_type,basic},{dirs,true},{files,true},{accept_fn, fun(_) -> true end}]`
 
+<a name="finished-1"></a>
+
+### finished/1 ###
+
+<pre><code>
+finished(Scanner::#scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}) -&gt; boolean()
+</code></pre>
+<br />
+
 <a name="next-1"></a>
 
 ### next/1 ###
 
 <pre><code>
-next(Scanner::#scanner{}) -&gt; {{dir, string()}, #scanner{}} | {{file, string()}, #scanner{}} | {finished, #scanner{}}
+next(Scanner::#scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}) -&gt; {{dir, string()}, #scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}} | {{file, string()}, #scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}} | {finished, #scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}}
 </code></pre>
 <br />
 
@@ -146,7 +164,7 @@ scanner is an exit-able offense.
 ### scan/1 ###
 
 <pre><code>
-scan(Directory::string()) -&gt; #scanner{}
+scan(Directory::string()) -&gt; #scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}
 </code></pre>
 <br />
 
@@ -157,7 +175,7 @@ Equivalent to [`scan(BaseDirectory, [])`](#scan-2).
 ### scan/2 ###
 
 <pre><code>
-scan(Directory::string(), Options::[tuple()]) -&gt; #scanner{}
+scan(Directory::string(), Options::[tuple()]) -&gt; #scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}
 </code></pre>
 <br />
 

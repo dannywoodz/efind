@@ -18,9 +18,15 @@
 %%% @end
 
 -module(efind).
--include("../include/efind.hrl").
 -include_lib("kernel/include/file.hrl").
--export([find/1, find/2, scan/1, scan/2, next/1]).
+-export([find/1, find/2, scan/1, scan/2, next/1, finished/1, close/1]).
+-record(scanner, {root                           :: string(),
+                  scanner                        :: undefined | pid(),
+                  dirs=true                      :: boolean(),
+                  files=true                     :: boolean(),
+                  accept_fn = fun(_) -> true end :: function(),
+                  finished=false                 :: boolean(),
+                  result_type=basic              :: basic | names}).
 
 %% ============================================================================
 %% PUBLIC API
@@ -100,6 +106,19 @@ next(#scanner{scanner=ScannerProcess,finished=false}=Scanner) ->
         {ScannerProcess, FSEntry} -> {FSEntry, Scanner}
     end.
 
+-spec finished(#scanner{}) -> boolean().
+finished(#scanner{finished=Finished}) ->
+    Finished.
+
+-spec close(#scanner{}) -> {finished, #scanner{}}.
+close(#scanner{finished=true}=Scanner) ->
+    {finished, Scanner};
+close(#scanner{scanner=ScannerProcess}=Scanner) ->
+    ScannerProcess ! {self(), close},
+    receive
+        {ScannerProcess, finished} -> {finished, Scanner#scanner{finished=true}}
+    end.
+
 %% ============================================================================
 %% private
 %% ============================================================================
@@ -161,10 +180,28 @@ finished() ->
 scanner([], _Scanner) ->
     finished();
 scanner([BaseDirectory|OtherDirectories], Scanner) ->
-    offer_dir(BaseDirectory, Scanner),
-    {Files, Directories} = files_and_directories_in(BaseDirectory),
-    offer_files(Files, Scanner),
-    scanner(OtherDirectories ++ Directories, Scanner).
+    case catch offer({dir,BaseDirectory}, Scanner) of
+        {'EXIT', finished} -> ok;
+        SubDirectories -> scanner(OtherDirectories ++ SubDirectories, Scanner)
+    end.
+
+-spec offer({dir, {dir, string()}} | {dir, string()} | {file, {file, string()}} | {file, string()}, #scanner{}) -> list().
+offer({dir, DirectoryName}, #scanner{dirs=IncludeDirs, accept_fn=Accept}=Scanner) ->
+    DirectoryEntry = entry(dir, DirectoryName, Scanner),
+    case IncludeDirs andalso Accept(DirectoryEntry) of
+        true -> block_until_asked_for_next(DirectoryEntry);
+        false -> ok
+    end,
+    {Files, Directories} = files_and_directories_in(DirectoryName),
+    lists:map(fun(File) -> offer({file, File}, Scanner) end, Files),
+    Directories;
+offer({file, FileName}, #scanner{files=IncludeFiles, accept_fn=Accept}=Scanner) ->
+    FileEntry = entry(file, FileName, Scanner),
+    case IncludeFiles andalso Accept(FileEntry) of
+        true -> block_until_asked_for_next(FileEntry);
+        false -> ok
+    end,
+    [].
 
 -spec files_and_directories_in(string()) -> {[string()],[string()]}.
 files_and_directories_in(BaseDirectory) ->
@@ -185,29 +222,6 @@ is_real_directory(Directory) ->
 full_path(BaseDirectory) ->
     fun(Name) -> filename:join(BaseDirectory, Name) end.
 
--spec offer_files([string()], #scanner{}) -> ok.
-offer_files([], _Scanner) ->
-    ok;
-offer_files([Filename|Filenames], #scanner{files=true, accept_fn=AcceptFn}=Scanner) ->
-    FileEntry = entry(file, Filename, Scanner),
-    case AcceptFn(FileEntry) of
-        true -> block_until_asked_for_next(FileEntry);
-        false -> ok
-    end,
-    offer_files(Filenames, Scanner);
-offer_files(_Filenames, #scanner{files=false}) ->
-    ok.
-
--spec offer_dir(string(), #scanner{}) -> ok.
-offer_dir(DirectoryName, #scanner{dirs=true,accept_fn=AcceptFn}=Scanner) ->
-    DirectoryEntry = entry(dir, DirectoryName, Scanner),
-    case AcceptFn(DirectoryEntry) of
-        true -> block_until_asked_for_next(DirectoryEntry);
-        false -> ok
-    end;
-offer_dir(_DirectoryName, _Scanner) ->
-    ok.
-
 -spec entry(file | dir, string(), #scanner{}) -> string() | {file, string()} | {dir, string()}.
 entry(_Type, Name, #scanner{result_type=names}) ->
     Name;
@@ -218,6 +232,9 @@ entry(Type, Name, #scanner{result_type=basic}) ->
 block_until_asked_for_next(FileSystemEntityOrFinished) ->
     receive
         {Requester,next} -> Requester ! {self(), FileSystemEntityOrFinished};
+        {Requester, close} ->
+            Requester ! {self(), finished},
+            exit(finished);
         AnythingElse -> exit({unexpected, AnythingElse})
     end,
     ok.

@@ -21,7 +21,10 @@
 </pre>
 
 {@link efind:scan/1} and {@link efind:scan/2} are lazy versions of <code>find</code>.  In concert
-with {@link efind:next/1}, they can be used to walk the filesystem on-demand:
+with {@link efind:next/1}, they can be used to walk the filesystem on-demand.  A scanner that is
+drained of all content will return {finished, LastScanner} from {@link efind:next/1} and is
+terminated automatically.  However, if you wish to abandon scanning early, you <em>must</em> call
+{@link efind:close/1} to release the scanner.   You'll leak a process per invocation otherwise.
 
 <pre lang="erlang">
   RootDir = "...".
