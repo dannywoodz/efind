@@ -63,40 +63,52 @@ dirs_no_files_test() ->
     with_temp_directory_containing_files(
       ["temp.txt"],
       fun(Dir, _Filenames) ->
-              [{dir,Dir}] = efind:find(Dir, [{files, false}])
+              has_all(
+                efind:find(Dir, [{files, false}]),
+                [{dir,Dir}])
       end).
 
 files_and_dirs_test() ->
     with_temp_directory_containing_files(
       ["temp-1.txt","temp-2.xml"],
       fun(Dir, _Filenames) ->
-              Expected = [{dir, Dir}, {file, filename:join(Dir,"temp-1.txt")}, {file, filename:join(Dir, "temp-2.xml")}],
-              Expected = efind:find(Dir)
+              has_all(
+                efind:find(Dir),
+                [{dir, Dir}, {file, filename:join(Dir,"temp-1.txt")}, {file, filename:join(Dir, "temp-2.xml")}])
       end).    
 
 files_no_dirs_test() ->
     with_temp_directory_containing_files(
       ["temp.txt"],
       fun(Dir, _Filenames) ->
-              Expected = [{file,filename:join(Dir, "temp.txt")}],
-              Expected = efind:find(Dir, [{dirs, false}])
+              has_all(
+                efind:find(Dir, [{dirs, false}]),
+                [{file,filename:join(Dir, "temp.txt")}])
       end).
     
 with_accept_fn_test() ->
     with_temp_directory_containing_files(
       ["temp-1.txt","temp-2.xml"],
       fun(Dir, _Filenames) ->
-              Expected = [{file, filename:join(Dir, "temp-2.xml")}],
-              Expected = efind:find(Dir,[{accept_fn, fun({_Type,Name}) -> filename:extension(Name) == ".xml" end}])
+              has_all(
+                efind:find(Dir,[{accept_fn, fun({_Type,Name}) -> filename:extension(Name) == ".xml" end}]),
+                [{file, filename:join(Dir, "temp-2.xml")}])
       end).
 
 with_accept_fn_names_only_test() ->
     with_temp_directory_containing_files(
       ["temp-1.txt","temp-2.xml"],
       fun(Dir, _Filenames) ->
-              Expected = [filename:join(Dir, "temp-2.xml")],
-              Expected = efind:find(Dir,[{result_type, names}, {accept_fn, fun(Name) -> filename:extension(Name) == ".xml" end}])
+              has_all(
+                efind:find(Dir,[{result_type, names}, {accept_fn, fun(Name) -> filename:extension(Name) == ".xml" end}]),
+                [filename:join(Dir, "temp-2.xml")])
       end).
+
+has_all(_Actual, []) ->
+    ok;
+has_all(Actual, [Expected|Others]) ->
+    ?assert(lists:member(Expected, Actual)),
+    has_all(Actual, Others).
 
 using_finished_scanner_test() ->
     with_empty_temp_directory(fun(Dir) ->
