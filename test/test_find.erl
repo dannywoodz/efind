@@ -130,3 +130,10 @@ bad_boolean_config_test() ->
 
 bad_result_type_config_test() ->
     ?assertExit({kaboom, must_be_one_of, [names, basic]}, efind:find("", [{result_type, kaboom}])).
+
+close_finished_scanner_test() ->
+    with_empty_temp_directory(fun(Dir) ->
+                                      Scanner = efind:scan(Dir,[{dirs,false}]),
+                                      {finished, Scanner2} = efind:next(Scanner),
+                                      {finished, Scanner3} = efind:close(Scanner2)
+                              end).
