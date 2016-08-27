@@ -135,5 +135,5 @@ close_finished_scanner_test() ->
     with_empty_temp_directory(fun(Dir) ->
                                       Scanner = efind:scan(Dir,[{dirs,false}]),
                                       {finished, Scanner2} = efind:next(Scanner),
-                                      {finished, Scanner3} = efind:close(Scanner2)
+                                      {finished, _Scanner3} = efind:close(Scanner2)
                               end).
