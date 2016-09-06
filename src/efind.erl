@@ -108,7 +108,10 @@ finished(Scanner) ->
 
 -spec close(pid()) -> finished.
 close(Scanner) ->
-    gen_server:call(Scanner, close).
+    case catch gen_server:call(Scanner, close) of
+        {'EXIT',{noproc,_}} -> finished;
+        finished -> finished
+    end.
 
 %% ============================================================================
 %% private
@@ -120,7 +123,7 @@ init([Scanner]) ->
 handle_call(next, _From, #scanner{pending_dirs=[], files=false}=State) ->
     {stop, normal, finished, State};
 handle_call(next, _From, #scanner{pending_files=[], pending_dirs=[]}=State) ->
-    {reply, finished, State};
+    {stop, normal, finished, State};
 handle_call(next, _From, #scanner{pending_files=[], pending_dirs=[Dir|Dirs], dirs=true}=State) ->
     {Files,SubDirs} = files_and_directories_in(Dir),
     {reply, entry(dir, Dir, State), State#scanner{pending_files=Files, pending_dirs=Dirs ++ SubDirs}};
