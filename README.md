@@ -4,7 +4,7 @@
 
 Copyright (c) 2016 Danny Woods
 
-__Version:__ 1.0
+__Version:__ 2.0
 
 __Authors:__ Danny Woods ([`dannywoodz@yahoo.co.uk`](mailto:dannywoodz@yahoo.co.uk)).
 
