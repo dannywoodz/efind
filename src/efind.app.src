@@ -1,7 +1,7 @@
 {application, efind,
  [
   {description, "Utilities for scanning directories"},
-  {vsn, "1.0"},
+  {vsn, "2.0"},
   {registered, []},
   {applications, [
                   kernel,
