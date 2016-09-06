@@ -18,12 +18,15 @@
 %%% @end
 
 -module(efind).
+-behaviour(gen_server).
 -include_lib("kernel/include/file.hrl").
 -export([find/1, find/2, scan/1, scan/2, next/1, finished/1, close/1]).
+-export([init/1, handle_cast/2, handle_info/2, handle_call/3, terminate/2, code_change/3]).
 -record(scanner, {root                           :: string(),
-                  scanner                        :: undefined | pid(),
-                  dirs=true                      :: boolean(),
                   files=true                     :: boolean(),
+                  pending_files = []             :: list({file,string()}) | list(string()),
+                  dirs=true                      :: boolean(),
+                  pending_dirs  = []             :: list({dir,string()}) | list(string()),
                   accept_fn = fun(_) -> true end :: function(),
                   finished=false                 :: boolean(),
                   result_type=basic              :: basic | names}).
@@ -59,10 +62,10 @@ find(BaseDirectory) ->
 -spec find(string(),list(tuple())) -> [] | list({file,string()} | {dir,string()}) | list(string()).
 find(BaseDirectory, Options) ->
     Scanner = scan(BaseDirectory, Options),
-    collect(next(Scanner), []).
+    collect(Scanner, []).
 
 %% @equiv scan(BaseDirectory, [])
--spec scan(string()) -> #scanner{}.
+-spec scan(string()) -> pid().
 scan(Directory) ->
     scan(Directory, []).
 
@@ -71,57 +74,84 @@ scan(Directory) ->
 %% <pre lang="erlang">
 %%   Scanner = efind:scan(RootDirectory).
 %% </pre>
--spec scan(string(),list(tuple())) -> #scanner{}.
+-spec scan(string(),list(tuple())) -> pid().
 scan(Directory, Options) ->
-    Scanner = #scanner{root=Directory,
-                       dirs=dirs_opt(Options),
-                       files=files_opt(Options),
-                       accept_fn=accept_fn_opt(Options),
-                       result_type=result_type_opt(Options),
-                       scanner=self() % Soon-to-be-replaced
-                      },
-    ScannerProcess = spawn_link(fun() -> scanner([Directory], Scanner#scanner{scanner=self()}) end),
-    Scanner#scanner{scanner=ScannerProcess}.
+    {ok, Scanner} = gen_server:start_link(?MODULE, [#scanner{root=Directory,
+                                                             dirs=dirs_opt(Options),
+                                                             files=files_opt(Options),
+                                                             accept_fn=accept_fn_opt(Options),
+                                                             pending_dirs=[Directory],
+                                                             result_type=result_type_opt(Options)}], []),
+    Scanner.
 
 %% @doc
-%% Takes a scanner and yields the next value from it.  Returns a 2-tuple, where
-%% the first element is appropriate to `result_type', and the second element is
-%% a scanner to be used in any subsequent call to `next'.
+%% Takes a scanner and yields the next value from it.  Returns (by default), a 2-tuple,
+%% with the first element being 'file' or 'dir', and the second being the path to the
+%% resource.  The path alone can be returned by setting the 'result_type' option to
+%%  'names'.  When the scanner is exhausted, next/1 returned the atom 'finished'.
 %% <pre lang="erlang">
 %%   Scanner = efind:scanner(os:getenv("HOME")).
-%%   {{dir, Home}, Scanner2} = efind:next(Scanner).
-%%   {{Type, Name}, Scanner3} = efind:next(Scanner2).
+%%   {dir, Home}  = efind:next(Scanner).
+%%   {Type, Name} = efind:next(Scanner).
 %% </pre>
-%% <strong>The scanner used in the original call should not be used afterward</strong>.
-%% When exhausted, yields the tuple `{finished, FinalScanner}'.  Calling `next' on that
-%% scanner is an exit-able offense.
 
--spec next(#scanner{}) -> {{dir,string()}, #scanner{}} | {{file,string()}, #scanner{}} | {finished, #scanner{}}.
-next(#scanner{finished=true}) ->
-    exit(finished);
-next(#scanner{scanner=ScannerProcess,finished=false}=Scanner) ->
-    ScannerProcess ! {self(), next},
-    receive
-        {ScannerProcess, finished} -> {finished, Scanner#scanner{finished=true}};
-        {ScannerProcess, FSEntry} -> {FSEntry, Scanner}
+-spec next(pid()) -> {dir,string()} | {file,string()} | string() | finished.
+next(Scanner) ->
+    case gen_server:call(Scanner, next) of
+        again -> next(Scanner);
+        Result -> Result
     end.
 
--spec finished(#scanner{}) -> boolean().
-finished(#scanner{finished=Finished}) ->
-    Finished.
-
--spec close(#scanner{}) -> {finished, #scanner{}}.
-close(#scanner{finished=true}=Scanner) ->
-    {finished, Scanner};
-close(#scanner{scanner=ScannerProcess}=Scanner) ->
-    ScannerProcess ! {self(), close},
-    receive
-        {ScannerProcess, finished} -> {finished, Scanner#scanner{finished=true}}
+-spec finished(pid()) -> boolean().
+finished(Scanner) ->
+    case catch gen_server:call(Scanner, finished) of
+        {'EXIT',{noproc,_}} -> true;
+        Result -> Result
     end.
+
+-spec close(pid()) -> finished.
+close(Scanner) ->
+    gen_server:call(Scanner, close).
 
 %% ============================================================================
 %% private
 %% ============================================================================
+
+init([Scanner]) ->
+    {ok, Scanner}.
+
+handle_call(next, _From, #scanner{pending_dirs=[], files=false}=State) ->
+    {reply, finished, State};
+handle_call(next, _From, #scanner{pending_files=[], pending_dirs=[]}=State) ->
+    {reply, finished, State};
+handle_call(next, _From, #scanner{pending_files=[], pending_dirs=[Dir|Dirs], dirs=true}=State) ->
+    {Files,SubDirs} = files_and_directories_in(Dir),
+    {reply, entry(dir, Dir, State), State#scanner{pending_files=Files, pending_dirs=Dirs ++ SubDirs}};
+handle_call(next, _From, #scanner{pending_files=[], pending_dirs=[Dir|Dirs], dirs=false}=State) ->
+    {Files,SubDirs} = files_and_directories_in(Dir),
+    {reply, again, State#scanner{pending_files=Files, pending_dirs=Dirs ++ SubDirs}};
+handle_call(next, _From, #scanner{pending_files=[File|Files], files=true}=State) ->
+    {reply, entry(file, File, State), State#scanner{pending_files=Files}};
+handle_call(next, _From, #scanner{pending_dirs=[Dir|Dirs], files=false}=State) ->
+    {reply, entry(dir, Dir, State), State#scanner{pending_files=[], pending_dirs=Dirs}};
+handle_call(finished, _From, #scanner{pending_files=[], pending_dirs=[]}=State) ->
+    {reply, true, State};
+handle_call(finished, _From, State) ->
+    {reply, false, State};
+handle_call(close, _From, State) ->
+    {stop, normal, finished, State}.
+
+handle_info(_Message, State) ->
+    {noreply, State}.
+
+handle_cast(_Message, State) ->
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Other) ->
+    {ok, State}.
 
 -spec option(atom(), list(tuple()), any(), fun((any())->boolean())) -> any().
 option(Option, ListOfTuples, Default, ValidatorFn) ->
@@ -164,44 +194,12 @@ accept_fn_opt(ListOfTuples) ->
 result_type_opt(ListOfTuples) ->
     option(result_type, ListOfTuples, basic, fun(Value) -> must_be_one_of(Value, [names, basic]) end).
 
--spec collect({finished,#scanner{}} | {{file,string()},#scanner{}} | {{dir,string()},#scanner{}},
-              list({file,string()} | {dir,string()})) ->
-                     list({file,string()} | {dir,string()}) | list(string()).
-collect({finished, _Scanner}, Results) ->
-    lists:reverse(Results);
-collect({Spec, Scanner}, Results) ->
-    collect(next(Scanner), [Spec|Results]).
-
--spec finished() -> ok.
-finished() ->
-    block_until_asked_for_next(finished).
-
--spec scanner(list(string()), #scanner{}) -> ok.
-scanner([], _Scanner) ->
-    finished();
-scanner([BaseDirectory|OtherDirectories], Scanner) ->
-    case catch offer({dir,BaseDirectory}, Scanner) of
-        {'EXIT', finished} -> ok;
-        SubDirectories -> scanner(OtherDirectories ++ SubDirectories, Scanner)
+-spec collect(pid(), list({file,string()} | {dir,string()}) | list(string())) -> list({file,string()} | {dir,string()}) | list(string()).
+collect(Scanner, Results) ->
+    case next(Scanner) of
+        finished -> Results;
+        Result -> collect(Scanner, [Result|Results])
     end.
-
--spec offer({dir, {dir, string()}} | {dir, string()} | {file, {file, string()}} | {file, string()}, #scanner{}) -> list().
-offer({dir, DirectoryName}, #scanner{dirs=IncludeDirs, accept_fn=Accept}=Scanner) ->
-    DirectoryEntry = entry(dir, DirectoryName, Scanner),
-    case IncludeDirs andalso Accept(DirectoryEntry) of
-        true -> block_until_asked_for_next(DirectoryEntry);
-        false -> ok
-    end,
-    {Files, Directories} = files_and_directories_in(DirectoryName),
-    lists:map(fun(File) -> offer({file, File}, Scanner) end, Files),
-    Directories;
-offer({file, FileName}, #scanner{files=IncludeFiles, accept_fn=Accept}=Scanner) ->
-    FileEntry = entry(file, FileName, Scanner),
-    case IncludeFiles andalso Accept(FileEntry) of
-        true -> block_until_asked_for_next(FileEntry);
-        false -> ok
-    end,
-    [].
 
 -spec files_and_directories_in(string()) -> {[string()],[string()]}.
 files_and_directories_in(BaseDirectory) ->
@@ -227,14 +225,3 @@ entry(_Type, Name, #scanner{result_type=names}) ->
     Name;
 entry(Type, Name, #scanner{result_type=basic}) ->
     {Type, Name}.
-
--spec block_until_asked_for_next({file,string()} | {dir,string()} | finished) -> ok.
-block_until_asked_for_next(FileSystemEntityOrFinished) ->
-    receive
-        {Requester,next} -> Requester ! {self(), FileSystemEntityOrFinished};
-        {Requester, close} ->
-            Requester ! {self(), finished},
-            exit(finished);
-        AnythingElse -> exit({unexpected, AnythingElse})
-    end,
-    ok.

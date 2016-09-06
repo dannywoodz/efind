@@ -43,10 +43,9 @@ empty_dir_test() ->
     with_empty_temp_directory(fun(Dir) ->
                                       Scanner = efind:scan(Dir),
                                       ?assertNot(efind:finished(Scanner)),
-                                      {{dir, Dir}, Scanner2} = efind:next(Scanner),
-                                      ?assertNot(efind:finished(Scanner2)),
-                                      {finished, Scanner3} = efind:next(Scanner2),
-                                      ?assert(efind:finished(Scanner3)),
+                                      {dir, Dir} = efind:next(Scanner),
+                                      finished = efind:next(Scanner),
+                                      ?assert(efind:finished(Scanner)),
                                       ok
                               end).
 
@@ -54,8 +53,8 @@ empty_dir_no_dirs_test() ->
     with_empty_temp_directory(fun(Dir) ->
                                       Scanner = efind:scan(Dir,[{dirs,false}]),
                                       ?assertNot(efind:finished(Scanner)),
-                                      {finished, Scanner2} = efind:next(Scanner),
-                                      ?assert(efind:finished(Scanner2)),
+                                      finished = efind:next(Scanner),
+                                      ?assert(efind:finished(Scanner)),
                                       ok
                               end).
 
@@ -110,19 +109,11 @@ has_all(Actual, [Expected|Others]) ->
     ?assert(lists:member(Expected, Actual)),
     has_all(Actual, Others).
 
-using_finished_scanner_test() ->
-    with_empty_temp_directory(fun(Dir) ->
-                                      Scanner = efind:scan(Dir,[{dirs,false}]),
-                                      {finished, Scanner2} = efind:next(Scanner),
-                                      ?assert(efind:finished(Scanner2)),
-                                      ?assertExit(finished, efind:next(Scanner2))
-                              end).
-
 close_partially_realised_scanner_test() ->
     with_empty_temp_directory(fun(Dir) ->
                                       Scanner = efind:scan(Dir),
-                                      {finished, Scanner2} = efind:close(Scanner),
-                                      ?assert(efind:finished(Scanner2))
+                                      finished = efind:close(Scanner),
+                                      ?assert(efind:finished(Scanner))
                               end).
 
 bad_boolean_config_test() ->
@@ -134,6 +125,6 @@ bad_result_type_config_test() ->
 close_finished_scanner_test() ->
     with_empty_temp_directory(fun(Dir) ->
                                       Scanner = efind:scan(Dir,[{dirs,false}]),
-                                      {finished, Scanner2} = efind:next(Scanner),
-                                      {finished, _Scanner3} = efind:close(Scanner2)
+                                      finished = efind:next(Scanner),
+                                      finished = efind:close(Scanner)
                               end).
