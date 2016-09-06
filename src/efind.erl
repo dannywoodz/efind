@@ -217,8 +217,15 @@ is_real_directory(Directory) ->
 full_path(BaseDirectory) ->
     fun(Name) -> filename:join(BaseDirectory, Name) end.
 
--spec entry(file | dir, string(), #scanner{}) -> string() | {file, string()} | {dir, string()}.
-entry(_Type, Name, #scanner{result_type=names}) ->
-    Name;
-entry(Type, Name, #scanner{result_type=basic}) ->
-    {Type, Name}.
+-spec entry(file | dir, string(), #scanner{}) -> string() | {file, string()} | {dir, string()} | again.
+entry(_Type, Name, #scanner{result_type=names,accept_fn=AcceptFn}) ->
+    case AcceptFn(Name) of 
+        true -> Name;
+        false -> again
+    end;
+entry(Type, Name, #scanner{result_type=basic,accept_fn=AcceptFn}) ->
+    Entry = {Type,Name},
+    case AcceptFn(Entry) of 
+        true -> Entry;
+        false -> again
+    end.

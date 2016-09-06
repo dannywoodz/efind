@@ -89,7 +89,7 @@ with_accept_fn_test() ->
     with_temp_directory_containing_files(
       ["temp-1.txt","temp-2.xml"],
       fun(Dir, _Filenames) ->
-              has_all(
+              is_in_any_order(
                 efind:find(Dir,[{accept_fn, fun({_Type,Name}) -> filename:extension(Name) == ".xml" end}]),
                 [{file, filename:join(Dir, "temp-2.xml")}])
       end).
@@ -102,6 +102,10 @@ with_accept_fn_names_only_test() ->
                 efind:find(Dir,[{result_type, names}, {accept_fn, fun(Name) -> filename:extension(Name) == ".xml" end}]),
                 [filename:join(Dir, "temp-2.xml")])
       end).
+
+is_in_any_order(Actual, Expected) ->
+    ?assertEqual(length(Expected), length(Actual)),
+    has_all(Actual, Expected).
 
 has_all(_Actual, []) ->
     ok;
@@ -128,3 +132,4 @@ close_finished_scanner_test() ->
                                       finished = efind:next(Scanner),
                                       finished = efind:close(Scanner)
                               end).
+
