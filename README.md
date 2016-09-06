@@ -13,7 +13,7 @@ __Authors:__ Danny Woods ([`dannywoodz@yahoo.co.uk`](mailto:dannywoodz@yahoo.co.
 
 # Examples #
 
-[`efind:find/1`](https://github.com/dannywoodz/efind/blob/master/doc/efind.md#find-1) and [`efind:find/2`](https://github.com/dannywoodz/efind/blob/master/doc/efind.md#find-2) scan the selected root and return a list of results.
+[`efind:find/1`](https://github.com/dannywoodz/efind/blob/gen-server-impl/doc/efind.md#find-1) and [`efind:find/2`](https://github.com/dannywoodz/efind/blob/gen-server-impl/doc/efind.md#find-2) scan the selected root and return a list of results.
 
 ```erlang
 
@@ -29,21 +29,21 @@ __Authors:__ Danny Woods ([`dannywoodz@yahoo.co.uk`](mailto:dannywoodz@yahoo.co.
 
 ```
 
-[`efind:scan/1`](https://github.com/dannywoodz/efind/blob/master/doc/efind.md#scan-1) and [`efind:scan/2`](https://github.com/dannywoodz/efind/blob/master/doc/efind.md#scan-2) are lazy versions of `find`.  In concert
-with [`efind:next/1`](https://github.com/dannywoodz/efind/blob/master/doc/efind.md#next-1), they can be used to walk the filesystem on-demand.  A scanner that is
-drained of all content will return {finished, LastScanner} from [`efind:next/1`](https://github.com/dannywoodz/efind/blob/master/doc/efind.md#next-1) and is
+[`efind:scan/1`](https://github.com/dannywoodz/efind/blob/gen-server-impl/doc/efind.md#scan-1) and [`efind:scan/2`](https://github.com/dannywoodz/efind/blob/gen-server-impl/doc/efind.md#scan-2) are lazy versions of `find`.  In concert
+with [`efind:next/1`](https://github.com/dannywoodz/efind/blob/gen-server-impl/doc/efind.md#next-1), they can be used to walk the filesystem on-demand.  A scanner that is
+drained of all content will return finished from [`efind:next/1`](https://github.com/dannywoodz/efind/blob/gen-server-impl/doc/efind.md#next-1) and is
 terminated automatically.  However, if you wish to abandon scanning early, you _must_ call
-[`efind:close/1`](https://github.com/dannywoodz/efind/blob/master/doc/efind.md#close-1) to release the scanner.   You'll leak a process per invocation otherwise.
+[`efind:close/1`](https://github.com/dannywoodz/efind/blob/gen-server-impl/doc/efind.md#close-1) to release the scanner.   You'll leak a process per invocation otherwise.
 
 ```erlang
 
   RootDir = "...".
   Scanner = efind:scan(RootDir),
-  Fn = fun({finished,_Scanner}, _F) ->
-  		io:format("Done");
-	  ({Entry,NewScanner}, F) ->
+  Fn = fun(finished, _F) ->
+	  	io:format("Done~n"),
+	  (Entry, F) ->
 	  	io:format("~p~n", [Entry]),
-		F(efind:next(NewScanner), F)
+		F(efind:next(Scanner), F)
 	end,
   Fn(efind:next(Scanner), Fn).
 
@@ -55,5 +55,5 @@ terminated automatically.  However, if you wish to abandon scanning early, you _
 
 
 <table width="100%" border="0" summary="list of modules">
-<tr><td><a href="https://github.com/dannywoodz/efind/blob/master/doc/efind.md" class="module">efind</a></td></tr></table>
+<tr><td><a href="https://github.com/dannywoodz/efind/blob/gen-server-impl/doc/efind.md" class="module">efind</a></td></tr></table>
 

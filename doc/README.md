@@ -31,7 +31,7 @@ __Authors:__ Danny Woods ([`dannywoodz@yahoo.co.uk`](mailto:dannywoodz@yahoo.co.
 
 [`efind:scan/1`](efind.md#scan-1) and [`efind:scan/2`](efind.md#scan-2) are lazy versions of `find`.  In concert
 with [`efind:next/1`](efind.md#next-1), they can be used to walk the filesystem on-demand.  A scanner that is
-drained of all content will return {finished, LastScanner} from [`efind:next/1`](efind.md#next-1) and is
+drained of all content will return finished from [`efind:next/1`](efind.md#next-1) and is
 terminated automatically.  However, if you wish to abandon scanning early, you _must_ call
 [`efind:close/1`](efind.md#close-1) to release the scanner.   You'll leak a process per invocation otherwise.
 
@@ -39,11 +39,11 @@ terminated automatically.  However, if you wish to abandon scanning early, you _
 
   RootDir = "...".
   Scanner = efind:scan(RootDir),
-  Fn = fun({finished,_Scanner}, _F) ->
-  		io:format("Done");
-	  ({Entry,NewScanner}, F) ->
+  Fn = fun(finished, _F) ->
+	  	io:format("Done~n"),
+	  (Entry, F) ->
 	  	io:format("~p~n", [Entry]),
-		F(efind:next(NewScanner), F)
+		F(efind:next(Scanner), F)
 	end,
   Fn(efind:next(Scanner), Fn).
 

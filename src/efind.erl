@@ -121,7 +121,7 @@ init([Scanner]) ->
     {ok, Scanner}.
 
 handle_call(next, _From, #scanner{pending_dirs=[], files=false}=State) ->
-    {reply, finished, State};
+    {stop, normal, finished, State};
 handle_call(next, _From, #scanner{pending_files=[], pending_dirs=[]}=State) ->
     {reply, finished, State};
 handle_call(next, _From, #scanner{pending_files=[], pending_dirs=[Dir|Dirs], dirs=true}=State) ->

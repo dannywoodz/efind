@@ -7,6 +7,8 @@
 
 efind is a utility module in the spirit of the Unix 'find' tool.
 
+__Behaviours:__ [`gen_server`](gen_server.md).
+
 __Authors:__ Danny Woods ([`dannywoodz@yahoo.co.uk`](mailto:dannywoodz@yahoo.co.uk)).
 
 <a name="description"></a>
@@ -31,8 +33,8 @@ until some match is found without reading more than is necessary.<a name="index"
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#close-1">close/1</a></td><td></td></tr><tr><td valign="top"><a href="#find-1">find/1</a></td><td>Equivalent to <a href="#find-2"><tt>find(BaseDirectory, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#find-2">find/2</a></td><td>For the given base directory, returns a list of directories and files beneath (starting with the base itself).</td></tr><tr><td valign="top"><a href="#finished-1">finished/1</a></td><td></td></tr><tr><td valign="top"><a href="#next-1">next/1</a></td><td>
-Takes a scanner and yields the next value from it.</td></tr><tr><td valign="top"><a href="#scan-1">scan/1</a></td><td>Equivalent to <a href="#scan-2"><tt>scan(BaseDirectory, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#scan-2">scan/2</a></td><td>Returns a scanner that starts in the given directory.</td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#close-1">close/1</a></td><td></td></tr><tr><td valign="top"><a href="#code_change-3">code_change/3</a></td><td></td></tr><tr><td valign="top"><a href="#find-1">find/1</a></td><td>Equivalent to <a href="#find-2"><tt>find(BaseDirectory, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#find-2">find/2</a></td><td>For the given base directory, returns a list of directories and files beneath (starting with the base itself).</td></tr><tr><td valign="top"><a href="#finished-1">finished/1</a></td><td></td></tr><tr><td valign="top"><a href="#handle_call-3">handle_call/3</a></td><td></td></tr><tr><td valign="top"><a href="#handle_cast-2">handle_cast/2</a></td><td></td></tr><tr><td valign="top"><a href="#handle_info-2">handle_info/2</a></td><td></td></tr><tr><td valign="top"><a href="#init-1">init/1</a></td><td></td></tr><tr><td valign="top"><a href="#next-1">next/1</a></td><td>
+Takes a scanner and yields the next value from it.</td></tr><tr><td valign="top"><a href="#scan-1">scan/1</a></td><td>Equivalent to <a href="#scan-2"><tt>scan(BaseDirectory, [])</tt></a>.</td></tr><tr><td valign="top"><a href="#scan-2">scan/2</a></td><td>Returns a scanner that starts in the given directory.</td></tr><tr><td valign="top"><a href="#terminate-2">terminate/2</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
@@ -44,9 +46,15 @@ Takes a scanner and yields the next value from it.</td></tr><tr><td valign="top"
 ### close/1 ###
 
 <pre><code>
-close(Scanner::#scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}) -&gt; {finished, #scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}}
+close(Scanner::pid()) -&gt; finished
 </code></pre>
 <br />
+
+<a name="code_change-3"></a>
+
+### code_change/3 ###
+
+`code_change(OldVsn, State, Other) -> any()`
 
 <a name="find-1"></a>
 
@@ -129,42 +137,61 @@ Defaults are: `[{result_type,basic},{dirs,true},{files,true},{accept_fn, fun(_) 
 ### finished/1 ###
 
 <pre><code>
-finished(Scanner::#scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}) -&gt; boolean()
+finished(Scanner::pid()) -&gt; boolean()
 </code></pre>
 <br />
+
+<a name="handle_call-3"></a>
+
+### handle_call/3 ###
+
+`handle_call(X1, From, Scanner) -> any()`
+
+<a name="handle_cast-2"></a>
+
+### handle_cast/2 ###
+
+`handle_cast(Message, State) -> any()`
+
+<a name="handle_info-2"></a>
+
+### handle_info/2 ###
+
+`handle_info(Message, State) -> any()`
+
+<a name="init-1"></a>
+
+### init/1 ###
+
+`init(X1) -> any()`
 
 <a name="next-1"></a>
 
 ### next/1 ###
 
 <pre><code>
-next(Scanner::#scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}) -&gt; {{dir, string()}, #scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}} | {{file, string()}, #scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}} | {finished, #scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}}
+next(Scanner::pid()) -&gt; {dir, string()} | {file, string()} | string() | finished
 </code></pre>
 <br />
 
-Takes a scanner and yields the next value from it.  Returns a 2-tuple, where
-the first element is appropriate to `result_type`, and the second element is
-a scanner to be used in any subsequent call to `next`.
+Takes a scanner and yields the next value from it.  Returns (by default), a 2-tuple,
+with the first element being 'file' or 'dir', and the second being the path to the
+resource.  The path alone can be returned by setting the 'result_type' option to
+'names'.  When the scanner is exhausted, next/1 returned the atom 'finished'.
 
 ```erlang
 
     Scanner = efind:scanner(os:getenv("HOME")).
-    {{dir, Home}, Scanner2} = efind:next(Scanner).
-    {{Type, Name}, Scanner3} = efind:next(Scanner2).
+    {dir, Home}  = efind:next(Scanner).
+    {Type, Name} = efind:next(Scanner).
 ```
-
-
-<strong>The scanner used in the original call should not be used afterward</strong>
-.
-When exhausted, yields the tuple `{finished, FinalScanner}`.  Calling `next` on that
-scanner is an exit-able offense.
 
 <a name="scan-1"></a>
 
 ### scan/1 ###
 
 <pre><code>
-scan(Directory::string()) -&gt; #scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}
+scan(Directory::string()) -&gt; pid()
 </code></pre>
 <br />
 
@@ -175,7 +202,7 @@ Equivalent to [`scan(BaseDirectory, [])`](#scan-2).
 ### scan/2 ###
 
 <pre><code>
-scan(Directory::string(), Options::[tuple()]) -&gt; #scanner{root = string(), scanner = undefined | pid(), dirs = boolean(), files = boolean(), accept_fn = function(), finished = boolean(), result_type = basic | names}
+scan(Directory::string(), Options::[tuple()]) -&gt; pid()
 </code></pre>
 <br />
 
@@ -186,4 +213,10 @@ are relevant here.
 
     Scanner = efind:scan(RootDirectory).
 ```
+
+<a name="terminate-2"></a>
+
+### terminate/2 ###
+
+`terminate(Reason, State) -> any()`
 
