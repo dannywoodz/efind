@@ -219,13 +219,16 @@ full_path(BaseDirectory) ->
 
 -spec entry(file | dir, string(), #scanner{}) -> string() | {file, string()} | {dir, string()} | again.
 entry(_Type, Name, #scanner{result_type=names,accept_fn=AcceptFn}) ->
-    case AcceptFn(Name) of 
-        true -> Name;
-        false -> again
-    end;
+    accept_entry_or_again(Name, AcceptFn);
 entry(Type, Name, #scanner{result_type=basic,accept_fn=AcceptFn}) ->
-    Entry = {Type,Name},
-    case AcceptFn(Entry) of 
+    accept_entry_or_again({Type,Name}, AcceptFn).
+
+-spec accept_entry_or_again(string() | {dir,string()} | {file,string()},
+                            fun((string()|{dir,string()}|{file,string()})-> boolean())) ->
+                                   string() | {dir,string()} | {file,string()} | again.
+accept_entry_or_again(Entry, AcceptFn) ->
+    case AcceptFn(Entry) of
         true -> Entry;
         false -> again
     end.
+             
