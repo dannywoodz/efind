@@ -23,12 +23,9 @@ It has two main modes of operation: eager and lazy.
 The eager functions, [`find/1`](#find-1) and [`find/2`](#find-2), scan the
 directory tree and return the results as a fully-realised list.
 
-The lazy functions, [`scan/1`](#scan-1) and [`scan/2`](#scan-2), create a
-_scanner_ that can be fed into a call to [`next/1`](#next-1) to
-yield the next match _and a new scanner_.  The important
-distinction with this function is that only the current entry in
-the filesystem is read, allowing for huge directory trees to be read
-until some match is found without reading more than is necessary.<a name="index"></a>
+The lazy functions, [`scan/1`](#scan-1) and [`scan/2`](#scan-2), cache single
+directories at a time and exhaust those before reading additional
+directories, making it suitable for working with large trees.<a name="index"></a>
 
 ## Function Index ##
 

@@ -9,12 +9,9 @@
 %%% The eager functions, {@link find/1} and {@link find/2}, scan the
 %%% directory tree and return the results as a fully-realised list.
 %%%
-%%% The lazy functions, {@link scan/1} and {@link scan/2}, create a
-%%% <em>scanner</em> that can be fed into a call to {@link next/1} to
-%%% yield the next match <em>and a new scanner</em>.  The important
-%%% distinction with this function is that only the current entry in
-%%% the filesystem is read, allowing for huge directory trees to be read
-%%% until some match is found without reading more than is necessary.
+%%% The lazy functions, {@link scan/1} and {@link scan/2}, cache single
+%%% directories at a time and exhaust those before reading additional
+%%% directories, making it suitable for working with large trees.
 %%% @end
 
 -module(efind).
