@@ -21,13 +21,13 @@ clean:
 	@-rm -rf docs
 
 $(PLTNAME):
-	dialyzer --build_plt $(shell ./epaths) --output_plt $(PLTNAME)
+	-dialyzer --build_plt $(shell ./epaths) --output_plt $(PLTNAME)
 
 update_plt: $(PLTNAME)
-	dialyzer --add_to_plt $(shell ./epaths) --plt $(PLTNAME)
+	-dialyzer --add_to_plt $(shell ./epaths) --plt $(PLTNAME)
 
 check: $(PLTNAME) update_plt
-	dialyzer --plt $(PLTNAME) $(DEPS) ebin/*.beam
+	-dialyzer --plt $(PLTNAME) $(DEPS) ebin/*.beam
 
 docs:
 	erl $(DEPS) -noshell -run edoc_run application $(PROJECT) '[{doclet, edown_doclet},{top_level_readme, {"./README.md","$(REPOSITORY)"}},{edown_target, github}]'
